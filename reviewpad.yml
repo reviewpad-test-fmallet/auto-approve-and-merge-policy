@@ -10,7 +10,7 @@ dictionaries:
       '.github/workflows/**': '"devops"' 
 
 workflows:
-  - name: Approval and Review Assignment Policy with auto-approval and merge of sub-policy 
+  - name: Approval and Review Assignment Policy with auto-approval and merge sub-policy 
     run:
       # No action as long as the PR in draft
       - if: '!$isDraft()'
