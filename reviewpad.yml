@@ -1,0 +1,50 @@
+groups:
+  - name: trustable-bots
+    spec: '["renovate-bot", "snyk-bot"]'
+    
+dictionaries:
+  - name: approval-team-per-file-path
+    spec:
+      '**/authentication/**': '"security"'
+      '**/db/**': '"dba"'
+      '.github/workflows/**': '"devops"' 
+
+workflows:
+  - name: Approval and Review Assignment Policy with auto-approval and merge of sub-policy 
+    run:
+      # No action as long as the PR in draft
+      - if: '!$isDraft()'
+        then:
+          # Automatically approve and merge Pull Requests created by trustable bots
+          - if: $isElementOf($author(), $group('trustable-bots'))
+            then: 
+              - $approve($sprintf("This PR is automatically approved as it was created by trustable bot %s", [$author()]))
+              - $merge()
+          # Automatically approve and merge Pull Requests touching only .md files
+          - if: $hasFileExtensions([".md"])
+            then: 
+              - $approve("This PR is automatically approved as it touches only .md documentation files")
+              - $merge("squash")
+          # First mandatory approval level from the `developers` team
+          - if: '!$hasRequiredApprovals(1, $team("developers"))'
+            then:
+              # Lock the Merge if no approval from the 'developers' team
+              - $failCheckStatus("One approval is required from the 'developers' team")
+              # Assign the PR to one developer if this is not yet the case
+              - if: '!$any($reviewers(), ($reviewer: String => $isElementOf($reviewer, $team("developers"))))'
+                then: $assignReviewer($team("developers"), 1)
+            else: 
+              # Second mandatory approval level based on touched files
+              - forEach: 
+                  key: $filePattern
+                  value: $teamName
+                  in: $dictionary("approval-team-per-file-path")
+                  do:
+                    - if: $hasFilePattern($filePattern) && !$hasRequiredApprovals(1, $team($teamName))
+                      then: 
+                        # Lock the Merge if no approval
+                        - $failCheckStatus($sprintf("One approval is required from team '%s' as one file matching '%s' has been touched", [$teamName, $filePattern]))
+                  
+                        # Assign the PR to one team member  if this is not yet the case
+                        - if: '!$any($reviewers(), ($reviewer: String => $isElementOf($reviewer, $team($teamName))))'
+                          then: $assignReviewer($team($teamName), 1)
