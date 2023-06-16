@@ -16,7 +16,7 @@ workflows:
       - if: '!$isDraft()'
         then:
           # Automatically approve and merge Pull Requests created by trustable bots
-          - if: $isElementOf($author(), $group('trustable-bots'))
+          - if: $isElementOf($author(), $group("trustable-bots"))
             then: 
               - $approve($sprintf("This PR is automatically approved as it was created by trustable bot %s", [$author()]))
               - $merge()
