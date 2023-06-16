@@ -26,7 +26,7 @@ workflows:
               - $approve("This PR is automatically approved as it touches only .md documentation files")
               - $merge("squash")
           # Automatically approve Pull Requests not touching the core component
-          - if: '!hasFilePattern("src/core/**")'
+          - if: '!$hasFilePattern("src/core/**")'
             then: $approve("This PR has been automatically approved as it doesn't touch the core component")
           # First mandatory approval level from the `developers` team
           - if: '!$hasRequiredApprovals(1, $team("developers"))'
